@@ -262,6 +262,8 @@ module Rack
     # A <cookie-name> can be any US-ASCII characters, except control characters, spaces, or tabs. It also must not contain a separator character like the following: ( ) < > @ , ; : \ " / [ ] ? = { }.
     VALID_COOKIE_KEY = /\A[!#$%&'*+\-\.\^_`|~0-9a-zA-Z]+\z/.freeze
     private_constant :VALID_COOKIE_KEY
+    INVALID_COOKIE_ATTRIBUTE = /[;\r\n\0]/.freeze
+    private_constant :INVALID_COOKIE_ATTRIBUTE
 
     # :call-seq:
     #   set_cookie_header(key, value) -> encoded string
@@ -290,6 +292,12 @@ module Rack
 
       case value
       when Hash
+        if (domain_value = value[:domain])
+          validate_cookie_attribute!(:domain, domain_value)
+        end
+        if (path_value = value[:path])
+          validate_cookie_attribute!(:path, path_value)
+        end
         domain  = "; domain=#{value[:domain]}"   if value[:domain]
         path    = "; path=#{value[:path]}"       if value[:path]
         max_age = "; max-age=#{value[:max_age]}" if value[:max_age]
@@ -317,6 +325,12 @@ module Rack
 
       return "#{key}=#{value.map { |v| escape v }.join('&')}#{domain}" \
         "#{path}#{max_age}#{expires}#{secure}#{httponly}#{same_site}#{partitioned}"
+    end
+
+    def validate_cookie_attribute!(name, value)
+      return unless value.to_s.match?(INVALID_COOKIE_ATTRIBUTE)
+
+      raise ArgumentError, "invalid cookie #{name}: #{value.inspect}"
     end
 
     # :call-seq:
