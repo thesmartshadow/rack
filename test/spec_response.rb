@@ -374,6 +374,13 @@ describe Rack::Response do
     status.must_equal 307
   end
 
+  it "rejects Location headers with invalid characters" do
+    response = Rack::Response.new
+    lambda do
+      response.location = "/foo\r\nSet-Cookie: bad=1"
+    end.must_raise(ArgumentError, /invalid Location header/)
+  end
+
   it "has a useful constructor" do
     r = Rack::Response.new("foo")
     body = r.finish[2]

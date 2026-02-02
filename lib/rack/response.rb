@@ -264,6 +264,10 @@ module Rack
       end
 
       def location=(location)
+        if location && location.match?(/[\r\n]/)
+          raise ArgumentError, "invalid Location header"
+        end
+
         set_header "location", location
       end
 

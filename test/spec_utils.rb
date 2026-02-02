@@ -638,6 +638,20 @@ describe Rack::Utils, "cookies" do
     Rack::Utils.set_cookie_header('name', {value: 'value', partitioned: true}).must_equal 'name=value; partitioned'
   end
 
+  it "rejects cookie attributes with invalid characters" do
+    lambda do
+      Rack::Utils.set_cookie_header('name', {value: 'value', domain: "example.com\r\nSet-Cookie: bad=1"})
+    end.must_raise(ArgumentError, /invalid cookie domain/)
+
+    lambda do
+      Rack::Utils.set_cookie_header('name', {value: 'value', path: "/\n"})
+    end.must_raise(ArgumentError, /invalid cookie path/)
+
+    lambda do
+      Rack::Utils.set_cookie_header('name', {value: 'value', domain: "example.com; secure"})
+    end.must_raise(ArgumentError, /invalid cookie domain/)
+  end
+
   it "deletes cookies in header field" do
     header = []
 
